@@ -7,6 +7,8 @@ class Segment:
         self.size = size
         self.timeToProcess = timeToProcess
         self.ioOperationsList = ioOperationsList
+        self.alocated = False
+        self.processed = False
 
     def decreaseTime(self, valor):
         if(valor > self.timeToProcess):

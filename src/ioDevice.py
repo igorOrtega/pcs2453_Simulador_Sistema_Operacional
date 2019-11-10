@@ -9,7 +9,7 @@ class IoDevice:
         self.busy = False
 
     def request(self, segment):
-        # se estiver livre retorna True, se não coloca na fila e retorna false
+        # se estiver livre retorna True, se nao coloca na fila e retorna false
         if (self.busy != True):
             return True
         else:

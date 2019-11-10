@@ -1,7 +1,7 @@
-from disk import Disk
+x = [1 , 2, 3]
 
-a = Disk("disk.txt")
-
-print(a.avaiablesJobs[0])
-
-#print("#")
+try:
+    next(i for i in x if i == 2)
+    print("ok")
+except:
+    pass

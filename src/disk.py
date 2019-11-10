@@ -12,7 +12,7 @@ class Disk:
 
         lines = f.readlines()
         
-        jobInfo = None
+        jobName = None
         segMapTable = []
         segmentInfo = None
         ioOp = []
@@ -25,8 +25,7 @@ class Disk:
                 # --- se for job id
                 if line.startswith("Job"):
                     # pega valores lidos    
-                    jobInfo = line.split(":")[1]
-                    jobInfo = jobInfo.split(",")
+                    jobName = line.split(":")[1]
 
                 # se e um definicao de segmento
                 elif line.startswith("Segment"):
@@ -52,7 +51,7 @@ class Disk:
                     segmentInfo = None
                     ioOp = []
                     # salva Job
-                    newJob = Job(jobInfo[0], jobInfo[1], segMapTable)
+                    newJob = Job(jobName, segMapTable)
                     self.avaiablesJobs.append(newJob)
                     segMapTable = []
 

@@ -11,17 +11,17 @@ class Processor:
         self.queue = Queue()
         self.roundRobin = RoundRobin(5)
     
-    # métodos: request, release, isBusy
+    # metodos: request, release, isBusy
 
-    # tenta adicionar segmento ao Round Robin, se não conseguir coloca na queue. 
+    # tenta adicionar segmento ao Round Robin, se nao conseguir coloca na queue. 
     def request(self, segment, time):
 
-        # se não há posicoes disponiveis
+        # se nao ha posicoes disponiveis
         if(self.roundRobin.avaiablePositions == 0):
             # coloca na fila
             self.queue.enqueue(segment)
             return False
-        # se processador já comecou a processar algo (tempo de inicio round robin diferente do tempo do segmento)
+        # se processador ja comecou a processar algo (tempo de inicio round robin diferente do tempo do segmento)
         elif(self.roundRobin.startTime != time and self.roundRobin.startTime != None):
             # coloca na fila
             self.queue.enqueue(segment)
