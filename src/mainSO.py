@@ -1,7 +1,7 @@
-from processor import Processor
+from disk import Disk
 
-a = Processor(5)
-print(a.request(1,1))
-print(a.roundRobin.avaiablePositions)
-print(a.release(1))
-print(a.roundRobin.avaiablePositions)
+a = Disk("disk.txt")
+
+print(a.avaiablesJobs[0])
+
+#print("#")

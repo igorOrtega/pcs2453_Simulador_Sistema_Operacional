@@ -9,18 +9,21 @@ class IoDevice:
         self.busy = False
 
     def request(self, segment):
-
-        if !(self.busy):
-            self.busy = True
+        # se estiver livre retorna True, se não coloca na fila e retorna false
+        if (self.busy != True):
             return True
         else:
             self.queue.enqueue(segment)
             return False
 
+    # retorna true se tiver pendencias na fila
     def release(self):
 
         self.busy = False
 
-        if len(queue) != 0:
-            queue.dequeue
+        if len(self.queue) != 0:
+            self.queue.dequeue
+            return True
+        else:
+            return False
         

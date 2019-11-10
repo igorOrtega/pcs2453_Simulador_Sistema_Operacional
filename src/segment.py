@@ -2,13 +2,13 @@ from ioOp import IoOp
 
 class Segment:
 
-    def __init__(self, size, arraivalTime, timeToProcess, ioOperationsList):
+    def __init__(self, id, size, timeToProcess, ioOperationsList):
+        self.id = id
         self.size = size
-        self.arraivalTime = arraivalTime
         self.timeToProcess = timeToProcess
         self.ioOperationsList = ioOperationsList
 
-    def decreaseTime(self, valor);
+    def decreaseTime(self, valor):
         if(valor > self.timeToProcess):
             self.timeToProcess = 0
         else:
@@ -17,8 +17,8 @@ class Segment:
     def hasIoOp(self):
 
         pending = False
-        for ioOp in ioOperationsList:
-            if ioOp.finished = false
+        for ioOp in self.ioOperationsList:
+            if (ioOp.finished == False):
                 pending = True
         
         return pending

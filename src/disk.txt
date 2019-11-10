@@ -1,0 +1,28 @@
+# Este arquivo represeta o disco do sistema operacional
+# Nele encontra-se todos os jobs que podem ser executados
+# Formato esperado:
+#
+# Job:NomeDoJob,instante de execução
+# Segment:IdDoSegmento,tamanho em bytes,tempo de processamento
+# IoOp_IdDaOperação:device, número de operações
+# 
+# Para cada job x, podem existir y segmentos, e para cada segmento podem existir z operações de IO.
+#
+# Devices disponíveis: printer1, printer2, scanner1, scanner2
+#
+Job:job1,1
+Segment:seg1,10,30
+Segment:seg2,15,20
+Segment:seg3,30,50
+IoOp:op1,printer1,2
+Segment:seg4,1000,80
+endJob
+Job:job2,2
+Segment:seg5,15,20
+Segment:seg6,50,60
+IoOp:op2,scanner1,1
+IoOp:op3,scanner2,1
+IoOp:op4,printer1,5
+Segment:seg7,20,40
+endJob
+# end of file
