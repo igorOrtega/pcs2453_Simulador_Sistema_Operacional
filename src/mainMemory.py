@@ -9,23 +9,21 @@ class MainMemory:
         self.alocatedSegments = []
 
     def request(self, job):
-        # request por Job
+        # request de memoria somento apos arrival
         for segment in job.segmentMapTable:
-            # so aloca segmentos que nao estao alocados e nao terminaram o processamento
-            if (not segment.alocated) and (not segment.processed):
-                if(self.avaiableSpace > segment.size):
-                    self.alocatedSegments.append(segment)
-                    self.avaiableSpace -= segment.size
+            if(self.avaiableSpace > segment.size):
+                self.alocatedSegments.append(segment)
+                self.avaiableSpace -= segment.size
+                segment.alocated = True
 
-                    segment.alocated = True
+        hasNotAlocatedSeg = False
 
-        try:
-            next(segment for segment in job.segmentMapTable if not segment.alocated)
-            # fila de segmentos
+        for segment in job.segmentMapTable:
+            if not segment.alocated:
+                hasNotAlocatedSeg = True
+        
+        if(hasNotAlocatedSeg):
             self.queue.enqueue(job)
-        except:
-            # nao existe nenhum segmento para se alocar
-            pass
     
     def release(self, segment):
         
@@ -35,16 +33,20 @@ class MainMemory:
 
         # analisa primeiro job da fila
 
-        for segment in self.queue[0].segmentMapTable:
-            if (not segment.alocated) and (not segment.processed):
+        for segment in self.queue.queue[0].segmentMapTable:
+            if (not segment.alocated) and (not segment.done):
                 if(self.avaiableSpace > segment.size):
                     self.alocatedSegments.append(segment)
                     self.avaiableSpace -= segment.size
-
                     segment.alocated = True
 
-        try:
-            # mantem na fila
-            next(segment for segment in self.queue[0].segmentMapTable if not segment.alocated)
-        except:
-            self.queue.dequeue()
+        # tira da fila se nao tiver mais segmentos nao alocados
+        dequeue = True
+
+        for segment in self.queue.queue[0].segmentMapTable:
+            if not segment.alocated:
+                if not segment.done:
+                    dequeue = False
+        
+        if(dequeue):
+            self.queue.dequeue

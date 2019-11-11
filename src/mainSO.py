@@ -1,7 +1,5 @@
-x = [1 , 2, 3]
+from simulator import Simulator
 
-try:
-    next(i for i in x if i == 2)
-    print("ok")
-except:
-    pass
+s = Simulator(150)
+
+s.main()

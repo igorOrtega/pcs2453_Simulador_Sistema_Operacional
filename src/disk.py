@@ -30,7 +30,7 @@ class Disk:
                 # se e um definicao de segmento
                 elif line.startswith("Segment"):
                     if not segmentInfo == None:
-                        newSeg = Segment(segmentInfo[0], segmentInfo[1], segmentInfo[2], ioOp)
+                        newSeg = Segment(segmentInfo[0], int(segmentInfo[1]), int(segmentInfo[2]), ioOp)
                         segMapTable.append(newSeg)
                         ioOp = []
                 # pega valores lidos
@@ -46,7 +46,7 @@ class Disk:
                 
                 elif line == "endJob":
                     # salva ultimo segmento
-                    newSeg = Segment(segmentInfo[0], segmentInfo[1], segmentInfo[2], ioOp)
+                    newSeg = Segment(segmentInfo[0], int(segmentInfo[1]), int(segmentInfo[2]), ioOp)
                     segMapTable.append(newSeg)
                     segmentInfo = None
                     ioOp = []

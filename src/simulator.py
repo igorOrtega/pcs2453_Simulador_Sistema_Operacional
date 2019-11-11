@@ -23,7 +23,7 @@ class Simulator:
 
         # inicializa principais componentes
         self.cpu = Processor(10) #10 unidades de tempo para slice time
-        self.memory = MainMemory(256, 100) # tamanho: 256 bytes, tempo de relocacao: 100 unidade de tempo
+        self.memory = MainMemory(256, 20) # tamanho: 256 bytes, tempo de relocacao: 100 unidade de tempo
         self.disk = Disk("disk.txt") # disco possui jobs disponiveis a serem disputados
 
 
@@ -32,9 +32,9 @@ class Simulator:
 
         # tela para programar simulacao (escolha de jobs e tempos)
 
-        choose = "1"
+        choose = 1
 
-        while(choose != "0"):
+        while(choose != 0):
             # limpa tela
             os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -49,14 +49,15 @@ class Simulator:
                 print("%s - "%(i) + job.name)
             print("\n")
             jobChoose = input("Escreve o nome de um: ")
-            jobArrivalTime = input("Tempo de chegada no simulador: ")
+            jobArrivalTime = int(input("Tempo de chegada no simulador: "))
 
+            found = False
             
-            try:
-                selectedJob = next(job for job in disk.avaiablesJobs if job.name == jobChoose)
-                found = True
-            except:
-                found = False
+            for job in self.disk.avaiablesJobs:
+                if job.name == jobChoose:
+                    found = True
+                    selectedJob = job
+                    break
             
             # se achou continua
             if found:
@@ -75,7 +76,7 @@ class Simulator:
 
             print("\n")
             print("Deseja continuar selecionando Jobs para simular? ")
-            choose = input("1 - Sim, 0 - Nao\n")
+            choose = int(input("1 - Sim, 0 - Nao\n"))
 
         while(self.simulationEndTime > self.currentInstant and choose != "5"):
             # limpa tela
@@ -85,28 +86,28 @@ class Simulator:
 
             print("1 - Enable Log, 2 - Disable Log, 3 - Alter Simulation End Time, 4 - Run One Time Unit, 5 - Break Simulation \n")
             
-            choose = input()
+            choose = int(input())
             # enable log
-            if choose == "1":
+            if choose == 1:
                 
                 print("Escolha 1")
                 time.sleep(1)
             # disable log
-            elif choose == "2":
+            elif choose == 2:
                 print("Escolha 2")
                 time.sleep(1)
             # alter simulation end time
-            elif choose == "3":
+            elif choose == 3:
                 print("Escolha 3")
                 time.sleep(1)
             # run events for the current instant
-            elif choose == "4":
+            elif choose == 4:
                 
-                hasEventToSim = True
+                hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
 
                 while(hasEventToSim and self.eventList.total != 0):
-                    
-                    if (self.eventList[0].time == self.currentInstant):
+
+                    if (self.eventList.events[0].time == self.currentInstant):
                         # existe evento para tratar
                         currentEvent = self.eventList.pop()
                         eventType = currentEvent.type
@@ -123,27 +124,27 @@ class Simulator:
 
                         elif eventType == "RELEASE MEM":
                             #
-                            self.releaseMemory()
+                            self.releaseMemory(currentEvent.job)
 
                         elif eventType == "REQUEST CPU":
                             #
-                            self.reqCpu()
+                            self.reqCpu(currentEvent.job)
 
                         elif eventType == "PROCESS CPU":
                             #
-                            self.processCpu()
+                            self.processCpu(currentEvent.job)
 
                         elif eventType == "RELEASE CPU":
                             #
-                            self.releaseCpu()
+                            self.releaseCpu(currentEvent.job)
 
                         elif eventType == "REQUEST IO":
                             #
-                            self.reqIo()
+                            self.reqIo(currentEvent.job)
 
                         elif eventType == "RELEASE IO":
                             #
-                            self.releaseIo()
+                            self.releaseIo(currentEvent.job)
 
                         elif eventType == "ENABLE LOG":
                             #
@@ -157,10 +158,15 @@ class Simulator:
                             #
                             self.alterSimulationEndTime()
 
+                        # verifica se proximo evento da lista possui mesmo tempo de execucao
+                        hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
+
 
                 #atualiza tempo
                 self.currentInstant += 1
-            elif choose == "5":
+
+                
+            elif choose == 5:
                 print("Escolha 5")
                 time.sleep(1)
             else:
@@ -204,29 +210,112 @@ class Simulator:
         # analisa se pode fazer cpu request para possiveis novos segmentos alocados
         try:
            # existem segmentos alocados e nao processados=> cria evento
-            next(segment for segment in job.segmentMapTable if segment.alocated and not segment.processed)
+            next(segment for segment in job.segmentMapTable if segment.alocated and not segment.processing)
             self.eventList.add(Event(job, self.currentInstant + self.memory.relocationTime, "REQUEST CPU"))
         except:
             # se não conseguiu alocar nada, nao cria evento
             pass
 
-    def reqCpu(self):
+    def reqCpu(self, job):
         #
-        return True
+        for segment in job.segmentMapTable:
+            if (segment.alocated and not segment.processing):
+                self.cpu.request(segment, self.currentInstant)
+                # A partir do momento em que vai para o processador vira "processing"
+                segment.processing = True
 
-    def processCpu(self):
-        #
-        return True
+        try:
+           # existem segmentos no round Robin => cria evento process para job, se nao espera liberar cpu
+            next(segment for segment in job.segmentMapTable if segment in self.cpu.roundRobin.list)
+            self.eventList.add(Event(job, self.currentInstant + self.cpu.sliceTime, "PROCESS CPU"))
+        except:
+            pass
 
-    def releaseCpu(self):
+    def processCpu(self, job):
+        # run nos segmentos not dones
+        for segment in job.segmentMapTable:
+            if(not segment.done):
+                self.cpu.run(segment)
+        
+        # apos run faz analises para definir eventos criados (existe a possibilidade de um mesmo job possuir eventos de release e process cpu)
+        createRelease = False
+        createProcess = False
+        for segment in job.segmentMapTable:
+            if segment.done:
+                createRelease = True
+            # se nao esta pronto, analisa se tem IO
+            elif segment.alocated and segment.processing:
+                if segment.hasIoOp():
+                    createRelease = True
+                else:
+                    createProcess = True
+        
+        #cria eventos
+        if createRelease:
+            self.eventList.add(Event(job, self.currentInstant, "RELEASE CPU"))
+        if createProcess:
+            self.eventList.add(Event(job, self.currentInstant + self.cpu.sliceTime, "PROCESS CPU"))
+            
+    def releaseCpu(self, job):
+
+        # processing done:
+        #   has Io? y => release, req Io, n => release, release mem
+        # 
+        # processing hasIO y => release, req IO, n => nothing to do  
+
+        createIo = False
+        createReleaseMem = False
+
+        for segment in job.segmentMapTable:
+            if segment.processing and segment.done:
+                self.cpu.release(segment)
+                segment.processing = False
+                if (segment.hasIoOp()):
+                    createIo = True
+                else:
+                    createReleaseMem = True
+            # not finished, mas analisa IO
+            elif segment.processing:
+                if segment.hasIoOp():
+                    self.cpu.release(segment)
+                    segment.processing = False
+                    createIo = True
+
+        #cria eventos
+        if createIo:
+            self.eventList.add(Event(job, self.currentInstant, "REQUEST IO"))
+        if createReleaseMem:
+            self.eventList.add(Event(job, self.currentInstant, "RELEASE MEM"))
+        
+        # tenta colocar o maximo de segmentos da fila no roundRobin, se tiver algo na fila
+        if len(self.cpu.queue) > 0:
+
+            addedSeg = []
+            while(self.cpu.roundRobin.avaiable()):
+                nextSegment = self.cpu.queue.dequeue()
+                self.cpu.roundRobin.add(nextSegment)
+                addedSeg.append(nextSegment)
+
+            # reset timing round robin
+            self.cpu.roundRobin.startTime = self.currentInstant
+            self.cpu.roundRobin.endTime = self.currentInstant + self.cpu.sliceTime
+            
+            # descobre a quais jobs os segmentos adicionados pertencem e cria evento process para tais
+            createProcEvent = []
+            for segment in addedSeg:
+                for job in self.simulatedJobs:
+                    if segment in job.segmentMapTable:
+                        createProcEvent.append(job)
+            
+            for job in createProcEvent:
+                self.eventList.add(Event(job, self.currentInstant + self.cpu.sliceTime, "PROCESS CPU"))
+
+
+    def reqIo(self, job):
         #
         return True
     
-    def reqIo(self):
-        #
-        return True
-    
-    def  releaseIo(self):
+    def  releaseIo(self, job):
         #
         return True
     
