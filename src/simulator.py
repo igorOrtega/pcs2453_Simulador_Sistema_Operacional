@@ -5,7 +5,7 @@ from ioOp import IoOp
 from job import Job
 from mainMemory import MainMemory
 from processor import Processor
-from queue import Queue
+from myQueue import Queue
 from roundRobin import RoundRobin
 from segment import Segment
 from eventList import EventList
@@ -105,6 +105,7 @@ class Simulator:
                 
                 hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
 
+
                 while(hasEventToSim and self.eventList.total != 0):
 
                     if (self.eventList.events[0].time == self.currentInstant):
@@ -159,13 +160,16 @@ class Simulator:
                             self.alterSimulationEndTime()
 
                         # verifica se proximo evento da lista possui mesmo tempo de execucao
-                        hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
-
-
+                        if len(self.eventList.events) > 0:
+                            hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
+                        else:
+                            hasEventToSim = False
                 #atualiza tempo
                 self.currentInstant += 1
+                print("Tempo atual: " + str(self.currentInstant) + "\n")
+                time.sleep(1)
 
-                
+           
             elif choose == 5:
                 print("Escolha 5")
                 time.sleep(1)
@@ -180,7 +184,7 @@ class Simulator:
         os.system('cls' if os.name == 'nt' else 'clear')
 
         print("Simulador Sistema Operacional - PCS2453\n")
-        input("Estatisicas")
+
     
     # tratamentos de eventos
 
@@ -204,17 +208,19 @@ class Simulator:
 
         # libera memoria ocupado por segmento "done"
         for segment in job.segmentMapTable:
-            if (segment.done):
+            if (segment.done and segment.alocated):
                 self.memory.release(segment)
+                
         
-        # analisa se pode fazer cpu request para possiveis novos segmentos alocados
-        try:
-           # existem segmentos alocados e nao processados=> cria evento
-            next(segment for segment in job.segmentMapTable if segment.alocated and not segment.processing)
-            self.eventList.add(Event(job, self.currentInstant + self.memory.relocationTime, "REQUEST CPU"))
-        except:
-            # se não conseguiu alocar nada, nao cria evento
-            pass
+        # analisa se tem job na fila
+        if len(self.memory.queue.queue) > 0:
+            try:
+            # existem segmentos alocados e nao processados para o primeiro job da queue => cria evento
+                next(segment for segment in self.memory.queue.queue[0] if segment.alocated and not segment.processing and not segment.done)
+                self.eventList.add(Event(job, self.currentInstant + self.memory.relocationTime, "REQUEST CPU"))
+            except:
+                # se não conseguiu alocar nada, nao cria evento
+                pass
 
     def reqCpu(self, job):
         #
@@ -241,7 +247,7 @@ class Simulator:
         createRelease = False
         createProcess = False
         for segment in job.segmentMapTable:
-            if segment.done:
+            if segment.done and segment.processing:
                 createRelease = True
             # se nao esta pronto, analisa se tem IO
             elif segment.alocated and segment.processing:
@@ -288,7 +294,7 @@ class Simulator:
             self.eventList.add(Event(job, self.currentInstant, "RELEASE MEM"))
         
         # tenta colocar o maximo de segmentos da fila no roundRobin, se tiver algo na fila
-        if len(self.cpu.queue) > 0:
+        if len(self.cpu.queue.queue) > 0:
 
             addedSeg = []
             while(self.cpu.roundRobin.avaiable()):

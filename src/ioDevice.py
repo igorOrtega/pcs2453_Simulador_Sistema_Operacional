@@ -1,4 +1,4 @@
-from queue import Queue
+from myQueue import Queue
 
 class IoDevice:
 

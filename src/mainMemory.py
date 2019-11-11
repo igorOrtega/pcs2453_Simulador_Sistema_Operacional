@@ -1,4 +1,4 @@
-from queue import Queue
+from myQueue import Queue
 
 class MainMemory:
     
@@ -28,25 +28,26 @@ class MainMemory:
     def release(self, segment):
         
         # release por segmento
-        self.alocatedSegments.remove(segment)
+        self.alocatedSegments.pop(0)
         self.avaiableSpace += segment.size
+        segment.alocated = False
 
         # analisa primeiro job da fila
+        if len(self.queue.queue) > 0:
+            for segment in self.queue.queue[0].segmentMapTable:
+                if (not segment.alocated) and (not segment.done):
+                    if(self.avaiableSpace > segment.size):
+                        self.alocatedSegments.append(segment)
+                        self.avaiableSpace -= segment.size
+                        segment.alocated = True
 
-        for segment in self.queue.queue[0].segmentMapTable:
-            if (not segment.alocated) and (not segment.done):
-                if(self.avaiableSpace > segment.size):
-                    self.alocatedSegments.append(segment)
-                    self.avaiableSpace -= segment.size
-                    segment.alocated = True
+            # tira da fila se nao tiver mais segmentos nao alocados
+            dequeue = True
 
-        # tira da fila se nao tiver mais segmentos nao alocados
-        dequeue = True
-
-        for segment in self.queue.queue[0].segmentMapTable:
-            if not segment.alocated:
-                if not segment.done:
-                    dequeue = False
-        
-        if(dequeue):
-            self.queue.dequeue
+            for segment in self.queue.queue[0].segmentMapTable:
+                if not segment.alocated:
+                    if not segment.done:
+                        dequeue = False
+            
+            if(dequeue):
+                self.queue.dequeue

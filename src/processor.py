@@ -1,5 +1,5 @@
 
-from queue import Queue
+from myQueue import Queue
 from roundRobin import RoundRobin
 
 class Processor:
