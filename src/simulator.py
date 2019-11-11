@@ -21,6 +21,9 @@ class Simulator:
         self.eventList = EventList()
         self.simulatedJobs = []
 
+        # inicia com log ativo
+        self.log = True
+
         # inicializa principais componentes
         self.cpu = Processor(10) #10 unidades de tempo para slice time
         self.memory = MainMemory(256, 20) # tamanho: 256 bytes, tempo de relocacao: 100 unidade de tempo
@@ -34,6 +37,7 @@ class Simulator:
 
         choose = 1
 
+        # loop escolhas de jobs no disco
         while(choose != 0):
             # limpa tela
             os.system('cls' if os.name == 'nt' else 'clear')
@@ -78,33 +82,37 @@ class Simulator:
             print("Deseja continuar selecionando Jobs para simular? ")
             choose = int(input("1 - Sim, 0 - Nao\n"))
 
+
         while(self.simulationEndTime > self.currentInstant and choose != "5"):
             # limpa tela
             os.system('cls' if os.name == 'nt' else 'clear')
 
             print("Simulador Sistema Operacional - PCS2453\n")
 
-            print("1 - Enable Log, 2 - Disable Log, 3 - Alter Simulation End Time, 4 - Run One Time Unit, 5 - Break Simulation \n")
+            print("1 - Enable Log, 2 - Disable Log, 3 - Alter Simulation End Time, 4 - Break Simulation, ENTER - Run One Time Unit\n")
             
-            choose = int(input())
+            choose = input()
             # enable log
-            if choose == 1:
+            if choose == "1":
                 
                 print("Escolha 1")
                 time.sleep(1)
             # disable log
-            elif choose == 2:
+            elif choose == "2":
                 print("Escolha 2")
                 time.sleep(1)
             # alter simulation end time
-            elif choose == 3:
-                print("Escolha 3")
+            elif choose == "3":
                 time.sleep(1)
             # run events for the current instant
-            elif choose == 4:
-                
-                hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
+            elif choose == "":
 
+                print("\n Simulating ... \n")
+                
+                if len(self.eventList.events) > 0:
+                    hasEventToSim = (self.eventList.events[0].time == self.currentInstant)
+                else:
+                    hasEventToSim = False
 
                 while(hasEventToSim and self.eventList.total != 0):
 
@@ -112,6 +120,10 @@ class Simulator:
                         # existe evento para tratar
                         currentEvent = self.eventList.pop()
                         eventType = currentEvent.type
+
+                        if self.log:
+                            print("Current Event: " + str(currentEvent))
+                            input()
 
                         # aciona rotinas de tratamento de acordo com o tipo de evento
 
@@ -166,24 +178,50 @@ class Simulator:
                             hasEventToSim = False
                 #atualiza tempo
                 self.currentInstant += 1
-                print("Tempo atual: " + str(self.currentInstant) + "\n")
-                time.sleep(1)
 
            
-            elif choose == 5:
-                print("Escolha 5")
-                time.sleep(1)
+            elif choose == "4":
+                print("Escolha 4")
             else:
                 print("Escolha inválida")
-                time.sleep(1)
 
             
 
-        # printa estatitiscas
-        # limpa tela
-        os.system('cls' if os.name == 'nt' else 'clear')
+            # printa log atual
+            if(self.log):
+                # limpa tela
+                os.system('cls' if os.name == 'nt' else 'clear')
 
-        print("Simulador Sistema Operacional - PCS2453\n")
+                print("Simulador Sistema Operacional - PCS2453\n")
+                print("Tempo Atual: " + str(self.currentInstant) + "\n")
+                print("Jobs Simulados: \n")
+                
+                i = 0
+                
+                for j in self.simulatedJobs:
+                    i += 1
+                    print("job %s: "%(str(i)))
+                    print(j)
+
+                print("Event List: \n")
+                i = 0
+                for e in self.eventList.events:
+                    i += 1
+                    print(str(i) + " - " + str(e))
+                
+                print("Computer Infos: \n")
+
+                print("Processor: ")
+                print("Round Robin Start Time: " + str(self.cpu.roundRobin.startTime))
+                print("Round Robin End Time: " + str(self.cpu.roundRobin.endTime))
+                print("Avaiable position: " + str(self.cpu.roundRobin.avaiablePositions))
+                print("\nMemory: ")
+                print("avaible space: " + str(self.memory.avaiableSpace))
+                
+                input()
+
+        print("SIMULACAO FINALIZADA!!")
+        time.sleep(2)
 
     
     # tratamentos de eventos
@@ -212,15 +250,23 @@ class Simulator:
                 self.memory.release(segment)
                 
         
-        # analisa se tem job na fila
-        if len(self.memory.queue.queue) > 0:
-            try:
-            # existem segmentos alocados e nao processados para o primeiro job da queue => cria evento
-                next(segment for segment in self.memory.queue.queue[0] if segment.alocated and not segment.processing and not segment.done)
-                self.eventList.add(Event(job, self.currentInstant + self.memory.relocationTime, "REQUEST CPU"))
-            except:
-                # se não conseguiu alocar nada, nao cria evento
-                pass
+        # analisa se tem segmento alocado e nao processado, se tiver cria evento de request associado a tal job
+
+        # descobre a quais jobs os segmentos adicionados pertencem e cria evento process para tais
+        pendToProc = []
+
+        for segment in self.memory.alocatedSegments:
+            if (not segment.processing) and (not segment.done):
+                pendToProc.append(segment)
+
+        createReqEvent = []
+        for segment in pendToProc:
+            for job in self.simulatedJobs:
+                if segment in job.segmentMapTable:
+                    createReqEvent.append(job)
+        
+        for job in createReqEvent:
+            self.eventList.add(Event(job, self.currentInstant + self.memory.relocationTime, "REQUEST CPU"))
 
     def reqCpu(self, job):
         #
@@ -240,7 +286,7 @@ class Simulator:
     def processCpu(self, job):
         # run nos segmentos not dones
         for segment in job.segmentMapTable:
-            if(not segment.done):
+            if(not segment.done and segment.processing):
                 self.cpu.run(segment)
         
         # apos run faz analises para definir eventos criados (existe a possibilidade de um mesmo job possuir eventos de release e process cpu)
@@ -297,7 +343,7 @@ class Simulator:
         if len(self.cpu.queue.queue) > 0:
 
             addedSeg = []
-            while(self.cpu.roundRobin.avaiable()):
+            while(self.cpu.roundRobin.avaiable() and len(self.cpu.queue.queue) > 0):
                 nextSegment = self.cpu.queue.dequeue()
                 self.cpu.roundRobin.add(nextSegment)
                 addedSeg.append(nextSegment)

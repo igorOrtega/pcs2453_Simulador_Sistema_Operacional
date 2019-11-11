@@ -50,4 +50,4 @@ class MainMemory:
                         dequeue = False
             
             if(dequeue):
-                self.queue.dequeue
+                self.queue.dequeue()
