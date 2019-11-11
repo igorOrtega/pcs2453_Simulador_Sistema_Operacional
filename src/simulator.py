@@ -194,9 +194,21 @@ class Simulator:
             # se não conseguiu alocar nada, nao cria evento
             pass
 
-    def releaseMemory(self):
-        #
-        return True
+    def releaseMemory(self, job):
+
+        # libera memoria ocupado por segmento "done"
+        for segment in job.segmentMapTable:
+            if (segment.done):
+                self.memory.release(segment)
+        
+        # analisa se pode fazer cpu request para possiveis novos segmentos alocados
+        try:
+           # existem segmentos alocados e nao processados=> cria evento
+            next(segment for segment in job.segmentMapTable if segment.alocated and not segment.processed)
+            self.eventList.add(Event(job, self.currentInstant + self.memory.relocationTime, "REQUEST CPU"))
+        except:
+            # se não conseguiu alocar nada, nao cria evento
+            pass
 
     def reqCpu(self):
         #

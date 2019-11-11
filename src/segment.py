@@ -9,6 +9,7 @@ class Segment:
         self.ioOperationsList = ioOperationsList
         self.alocated = False
         self.processed = False
+        self.done = False
 
     def decreaseTime(self, valor):
         if(valor > self.timeToProcess):
