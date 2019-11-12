@@ -8,22 +8,26 @@ class IoDevice:
         self.queue = Queue()
         self.busy = False
 
-    def request(self, segment):
+    def request(self, ioOp):
         # se estiver livre retorna True, se nao coloca na fila e retorna false
         if (self.busy != True):
+            self.busy = True
+            ioOp.processing = True
             return True
         else:
-            self.queue.enqueue(segment)
+            self.queue.enqueue(ioOp)
             return False
 
     # retorna true se tiver pendencias na fila
-    def release(self):
+    def release(self, ioOp):
 
         self.busy = False
+        ioOp.processing = False
+        ioOp.finished = True
 
-        if len(self.queue) != 0:
-            self.queue.dequeue
-            return True
-        else:
-            return False
-        
+        addedIo = None
+
+        if len(self.queue.queue) > 0:
+            addedIo = self.queue.dequeue()
+
+        return addedIo

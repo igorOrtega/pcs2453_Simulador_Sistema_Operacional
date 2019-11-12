@@ -4,7 +4,7 @@
 #
 # Job:NomeDoJob
 # Segment:IdDoSegmento,tamanho em bytes,tempo de processamento
-# IoOp_IdDaOperação:device, número de operações
+# IoOp:idDaOperação,device, número de operações
 # 
 # Para cada job x, podem existir y segmentos, e para cada segmento podem existir z operações de IO.
 #
@@ -14,15 +14,15 @@ Job:job1
 Segment:seg1,10,10
 Segment:seg2,15,20
 Segment:seg3,30,20
-#IoOp:op1,printer1,2
+IoOp:op1,printer1,2
 Segment:seg4,150,10
 endJob
 Job:job2
 Segment:seg5,15,20
 Segment:seg6,50,60
-#IoOp:op2,scanner1,1
-#IoOp:op3,scanner2,1
-#IoOp:op4,printer1,5
+IoOp:op2,scanner1,1
+IoOp:op3,scanner2,1
+IoOp:op4,printer1,5
 Segment:seg7,20,40
 endJob
 # end of file

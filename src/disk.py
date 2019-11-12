@@ -40,7 +40,7 @@ class Disk:
                 elif line.startswith("IoOp"):
                     ioInfo =  line.split(":")[1]
                     ioInfo = ioInfo.split(",")
-                    newIoOp = IoOp(ioInfo[0], ioInfo[1], ioInfo[2])
+                    newIoOp = IoOp(ioInfo[0], ioInfo[1], int(ioInfo[2]))
 
                     ioOp.append(newIoOp)
                 

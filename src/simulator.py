@@ -29,6 +29,13 @@ class Simulator:
         self.memory = MainMemory(256, 20) # tamanho: 256 bytes, tempo de relocacao: 100 unidade de tempo
         self.disk = Disk("disk.txt") # disco possui jobs disponiveis a serem disputados
 
+        self.devices = {
+            "printer1" : IoDevice("printer1", 1),
+            "printer2" : IoDevice("printer2", 5),
+            "scanner1" : IoDevice("scanner1", 5),
+            "scanner2" : IoDevice("scanner2", 10)
+        }
+
 
     # loop principal do simulador
     def main(self):
@@ -209,7 +216,7 @@ class Simulator:
                     i += 1
                     print(str(i) + " - " + str(e))
                 
-                print("Computer Infos: \n")
+                print("\nComputer Infos: \n")
 
                 print("Processor: ")
                 print("Round Robin Start Time: " + str(self.cpu.roundRobin.startTime))
@@ -217,6 +224,32 @@ class Simulator:
                 print("Avaiable position: " + str(self.cpu.roundRobin.avaiablePositions))
                 print("\nMemory: ")
                 print("avaible space (bytes): " + str(self.memory.avaiableSpace))
+                print("\nDevice Status: ")
+                # Printer 1
+                if (self.devices["printer1"].busy):
+                    infoP1 = "busy"
+                else:
+                    infoP1 = "free"
+                print("printer 1: " + infoP1)
+                # Printer 2
+                if (self.devices["printer2"].busy):
+                    infoP2 = "busy"
+                else:
+                    infoP2 = "free"
+                print("printer 2: " + infoP2)
+                # Scanner 1
+                if (self.devices["scanner1"].busy):
+                    infoS1 = "busy"
+                else:
+                    infoS1 = "free"
+                print("Scanner 1: " + infoS1)
+                # Scanner 1
+                if (self.devices["scanner2"].busy):
+                    infoS2 = "busy"
+                else:
+                    infoS2 = "free"
+                print("Scanner 2: " + infoS2)
+
                 
                 input()
 
@@ -244,20 +277,17 @@ class Simulator:
 
     def releaseMemory(self, job):
 
+        pendToProc = []
+
         # libera memoria ocupado por segmento "done"
         for segment in job.segmentMapTable:
             if (segment.done and segment.alocated):
-                self.memory.release(segment)
+                pendToProc += self.memory.release(segment)
                 
         
-        # analisa se tem segmento alocado e nao processado, se tiver cria evento de request associado a tal job
 
         # descobre a quais jobs os segmentos adicionados pertencem e cria evento process para tais
-        pendToProc = []
-
-        for segment in self.memory.alocatedSegments:
-            if (not segment.processing) and (not segment.done):
-                pendToProc.append(segment)
+        
 
         createReqEvent = []
         for segment in pendToProc:
@@ -270,18 +300,23 @@ class Simulator:
 
     def reqCpu(self, job):
         #
+        addedSeg = []
         for segment in job.segmentMapTable:
             if (segment.alocated and not segment.processing):
                 self.cpu.request(segment, self.currentInstant)
                 # A partir do momento em que vai para o processador vira "processing"
                 segment.processing = True
+                addedSeg.append(segment)
 
-        try:
-           # existem segmentos no round Robin => cria evento process para job, se nao espera liberar cpu
-            next(segment for segment in job.segmentMapTable if segment in self.cpu.roundRobin.list)
+
+        createEvent = False
+        for seg in addedSeg:
+            if seg in self.cpu.roundRobin.list:
+                createEvent = True
+
+        if createEvent:
             self.eventList.add(Event(job, self.currentInstant + self.cpu.sliceTime, "PROCESS CPU"))
-        except:
-            pass
+
 
     def processCpu(self, job):
         # run nos segmentos not dones
@@ -307,6 +342,8 @@ class Simulator:
             self.eventList.add(Event(job, self.currentInstant, "RELEASE CPU"))
         if createProcess:
             self.eventList.add(Event(job, self.currentInstant + self.cpu.sliceTime, "PROCESS CPU"))
+            self.cpu.roundRobin.startTime = self.currentInstant
+            self.cpu.roundRobin.endTime = self.currentInstant + self.cpu.sliceTime
             
     def releaseCpu(self, job):
 
@@ -365,11 +402,48 @@ class Simulator:
 
     def reqIo(self, job):
         #
-        return True
+        for segment in job.segmentMapTable:
+            if segment.hasIoOp():
+                for io in segment.ioOperationsList:
+                    if not io.finished:
+                        opStart = self.devices[io.device].request(io)
+                        if opStart:
+                            ioTotalTime = io.numberOfRepeticions * self.devices[io.device].timePerOp
+                            io.timeToEnd = self.currentInstant + ioTotalTime
+                            self.eventList.add(Event(job, self.currentInstant + ioTotalTime, "RELEASE IO"))
     
     def  releaseIo(self, job):
-        #
-        return True
+        # libera e pega ios da fila (já cria evento)
+        addedIO = []
+        for segment in job.segmentMapTable:
+            if segment.hasIoOp():
+                for io in segment.ioOperationsList:
+                    if io.processing and io.timeToEnd == self.currentInstant:
+                        newIo = self.devices[io.device].release(io)
+                        if newIo != None:
+                            addedIO.append(newIo)
+                           
+                           
+        # descobre de a quais jobs os ios adcionados pertencem
+        if len(addedIO) > 0:
+            for newIo in addedIO:
+                for job in self.simulatedJobs:
+                    for seg in job.segmentMapTable:
+                        if (newIo in seg.ioOperationsList):
+                            opStart = self.devices[io.newIo].request(newIo)
+                            if opStart:
+                                ioTotalTime = newIo.numberOfRepeticions * self.devices[io.newIo].timePerOp
+                                io.timeToEnd = self.currentInstant + ioTotalTime
+                                self.eventList.add(Event(job, self.currentInstant + ioTotalTime, "RELEASE IO"))
+            
+        # analisa se job ja pode voltar para processador ou nao
+        pend = False
+        for segment in job.segmentMapTable:
+            if segment.hasIoOp():
+                pend = True
+
+        if not pend:
+             self.eventList.add(Event(job, self.currentInstant, "REQUEST CPU"))
     
     def enableLog(self):
         #

@@ -32,6 +32,8 @@ class MainMemory:
         self.avaiableSpace += segment.size
         segment.alocated = False
 
+        recentlyAlocated = []
+
         # analisa primeiro job da fila
         if len(self.queue.queue) > 0:
             for segment in self.queue.queue[0].segmentMapTable:
@@ -40,6 +42,7 @@ class MainMemory:
                         self.alocatedSegments.append(segment)
                         self.avaiableSpace -= segment.size
                         segment.alocated = True
+                        recentlyAlocated.append(segment)
 
             # tira da fila se nao tiver mais segmentos nao alocados
             dequeue = True
@@ -51,3 +54,5 @@ class MainMemory:
             
             if(dequeue):
                 self.queue.dequeue()
+
+        return recentlyAlocated
