@@ -59,7 +59,7 @@ class Simulator:
                 i += 1
                 print("%s - "%(i) + job.name)
             print("\n")
-            jobChoose = input("Escreve o nome de um: ")
+            jobChoose = input("Escreva o nome de um: ")
             jobArrivalTime = int(input("Tempo de chegada no simulador: "))
 
             found = False
@@ -374,6 +374,9 @@ class Simulator:
                     self.cpu.release(segment)
                     segment.processing = False
                     createIo = True
+
+        # reseta tempo de inicio round robin
+        self.cpu.roundRobin.startTime = None
 
         #cria eventos
         if createIo:
