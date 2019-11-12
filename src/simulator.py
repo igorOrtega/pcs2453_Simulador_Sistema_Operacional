@@ -305,6 +305,7 @@ class Simulator:
 
     def reqCpu(self, job):
         #
+
         addedSeg = []
         for segment in job.segmentMapTable:
             if (segment.alocated and not segment.processing):
@@ -417,7 +418,6 @@ class Simulator:
                         opStart = self.devices[io.device].request(io)
                         if opStart:
                             ioTotalTime = io.numberOfRepeticions * self.devices[io.device].timePerOp
-                            io.timeToEnd = self.currentInstant + ioTotalTime
                             self.eventList.add(Event(job, self.currentInstant + ioTotalTime, "RELEASE IO"))
     
     def  releaseIo(self, job):
@@ -426,7 +426,7 @@ class Simulator:
         for segment in job.segmentMapTable:
             if segment.hasIoOp():
                 for io in segment.ioOperationsList:
-                    if io.processing and io.timeToEnd == self.currentInstant:
+                    if io.processing:
                         newIo = self.devices[io.device].release(io)
                         if newIo != None:
                             addedIO.append(newIo)
@@ -438,10 +438,9 @@ class Simulator:
                 for job in self.simulatedJobs:
                     for seg in job.segmentMapTable:
                         if (newIo in seg.ioOperationsList):
-                            opStart = self.devices[io.newIo].request(newIo)
+                            opStart = self.devices[newIo.device].request(newIo)
                             if opStart:
-                                ioTotalTime = newIo.numberOfRepeticions * self.devices[io.newIo].timePerOp
-                                io.timeToEnd = self.currentInstant + ioTotalTime
+                                ioTotalTime = newIo.numberOfRepeticions * self.devices[io.device].timePerOp
                                 self.eventList.add(Event(job, self.currentInstant + ioTotalTime, "RELEASE IO"))
             
         # analisa se job ja pode voltar para processador ou nao

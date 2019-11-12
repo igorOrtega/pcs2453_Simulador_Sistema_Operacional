@@ -5,5 +5,4 @@ class IoOp:
         self.device = device
         self.numberOfRepeticions = numberOfRepeticions
         self.processing = False
-        self.timeToEnd = None
         self.finished = False
