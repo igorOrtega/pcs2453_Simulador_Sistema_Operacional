@@ -1,3 +1,5 @@
+from job import Job
+
 class Event:
     
     def __init__(self, eJob, eTime, eType):
@@ -6,5 +8,9 @@ class Event:
         self.type = eType
 
     def __str__(self):
-        strEvent = "Instante de ocorrencia: %s, Tipo: %s, Job Associado: %s"%(str(self.time), self.type, self.job.name)
+        if type(self.job) is Job:
+            jobName = self.job.name
+        else:
+            jobName = ""
+        strEvent = "Instante de ocorrencia: %s, Tipo: %s, Job Associado: %s"%(str(self.time), self.type, jobName)
         return strEvent

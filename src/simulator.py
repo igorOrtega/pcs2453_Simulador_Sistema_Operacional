@@ -96,21 +96,28 @@ class Simulator:
 
             print("Simulador Sistema Operacional - PCS2453\n")
 
-            print("1 - Enable Log, 2 - Disable Log, 3 - Alter Simulation End Time, 4 - Break Simulation, ENTER - Run One Time Unit\n")
+            print("1 - Enable Log, 2 - Disable Log, 3 - Alter Simulation End Time, ENTER - Run One Time Unit\n")
             
             choose = input()
             # enable log
             if choose == "1":
-                
-                print("Escolha 1")
-                time.sleep(1)
+                if self.log:
+                    print("Log ja ativado")
+                    time.sleep(1)
+                else:
+                    self.eventList.add(Event(None, self.currentInstant, "ENABLE LOG"))
             # disable log
             elif choose == "2":
-                print("Escolha 2")
-                time.sleep(1)
+                if not self.log:
+                    print("Log ja desativado")
+                    time.sleep(1)
+                else:
+                    self.eventList.add(Event(None, self.currentInstant, "DISABLE LOG"))
             # alter simulation end time
             elif choose == "3":
-                time.sleep(1)
+                valor = int(input("\nEscolha novo final para simulacao: "))
+                self.eventList.add(Event(valor, self.currentInstant, "ALTER SIMULATION END TIME"))
+                
             # run events for the current instant
             elif choose == "":
 
@@ -128,9 +135,9 @@ class Simulator:
                         currentEvent = self.eventList.pop()
                         eventType = currentEvent.type
 
-                        if self.log:
-                            print("Current Event: " + str(currentEvent))
-                            input()
+                        
+                        print("Current Event: " + str(currentEvent))
+                        input()
 
                         # aciona rotinas de tratamento de acordo com o tipo de evento
 
@@ -176,7 +183,7 @@ class Simulator:
 
                         elif eventType == "ALTER SIMULATION END TIME":
                             #
-                            self.alterSimulationEndTime()
+                            self.alterSimulationEndTime(currentEvent.job)
 
                         # verifica se proximo evento da lista possui mesmo tempo de execucao
                         if len(self.eventList.events) > 0:
@@ -185,73 +192,71 @@ class Simulator:
                             hasEventToSim = False
                 #atualiza tempo
                 self.currentInstant += 1
-
-           
-            elif choose == "4":
-                print("Escolha 4")
-            else:
-                print("Escolha inválida")
-
-            
-
-            # printa log atual
-            if(self.log):
                 # limpa tela
                 os.system('cls' if os.name == 'nt' else 'clear')
 
                 print("Simulador Sistema Operacional - PCS2453\n")
                 print("Tempo Atual: " + str(self.currentInstant) + "\n")
-                print("Jobs Simulados: \n")
-                
-                i = 0
-                
-                for j in self.simulatedJobs:
-                    i += 1
-                    print("job %s: "%(str(i)))
-                    print(j)
-
-                print("Event List: \n")
-                i = 0
-                for e in self.eventList.events:
-                    i += 1
-                    print(str(i) + " - " + str(e))
-                
-                print("\nComputer Infos: \n")
-
-                print("Processor: ")
-                print("Round Robin Start Time: " + str(self.cpu.roundRobin.startTime))
-                print("Round Robin End Time: " + str(self.cpu.roundRobin.endTime))
-                print("Avaiable position: " + str(self.cpu.roundRobin.avaiablePositions))
-                print("\nMemory: ")
-                print("avaible space (bytes): " + str(self.memory.avaiableSpace))
-                print("\nDevice Status: ")
-                # Printer 1
-                if (self.devices["printer1"].busy):
-                    infoP1 = "busy"
-                else:
-                    infoP1 = "free"
-                print("printer 1: " + infoP1)
-                # Printer 2
-                if (self.devices["printer2"].busy):
-                    infoP2 = "busy"
-                else:
-                    infoP2 = "free"
-                print("printer 2: " + infoP2)
-                # Scanner 1
-                if (self.devices["scanner1"].busy):
-                    infoS1 = "busy"
-                else:
-                    infoS1 = "free"
-                print("Scanner 1: " + infoS1)
-                # Scanner 1
-                if (self.devices["scanner2"].busy):
-                    infoS2 = "busy"
-                else:
-                    infoS2 = "free"
-                print("Scanner 2: " + infoS2)
-
-                
                 input()
+
+                # printa log atual
+                if(self.log and (eventType != "ENABLE LOG" or eventType != "DISABLE LOG" or eventType != "ALTER SIMULATION END TIME")):
+
+                    print("Jobs Simulados: \n")
+                    
+                    i = 0
+                    
+                    for j in self.simulatedJobs:
+                        i += 1
+                        print("job %s: "%(str(i)))
+                        print(j)
+
+                    print("Event List: \n")
+                    i = 0
+                    for e in self.eventList.events:
+                        i += 1
+                        print(str(i) + " - " + str(e))
+                    
+                    print("\nComputer Infos: \n")
+
+                    print("Processor: ")
+                    print("Round Robin Start Time: " + str(self.cpu.roundRobin.startTime))
+                    print("Round Robin End Time: " + str(self.cpu.roundRobin.endTime))
+                    print("Avaiable position: " + str(self.cpu.roundRobin.avaiablePositions))
+                    print("\nMemory: ")
+                    print("avaible space (bytes): " + str(self.memory.avaiableSpace))
+                    print("\nDevice Status: ")
+                    # Printer 1
+                    if (self.devices["printer1"].busy):
+                        infoP1 = "busy"
+                    else:
+                        infoP1 = "free"
+                    print("printer 1: " + infoP1)
+                    # Printer 2
+                    if (self.devices["printer2"].busy):
+                        infoP2 = "busy"
+                    else:
+                        infoP2 = "free"
+                    print("printer 2: " + infoP2)
+                    # Scanner 1
+                    if (self.devices["scanner1"].busy):
+                        infoS1 = "busy"
+                    else:
+                        infoS1 = "free"
+                    print("Scanner 1: " + infoS1)
+                    # Scanner 1
+                    if (self.devices["scanner2"].busy):
+                        infoS2 = "busy"
+                    else:
+                        infoS2 = "free"
+                    print("Scanner 2: " + infoS2)
+
+                    
+                    input()
+
+            else:
+                print("Escolha inválida")
+
 
         print("SIMULACAO FINALIZADA!!")
         time.sleep(2)
@@ -447,13 +452,14 @@ class Simulator:
     
     def enableLog(self):
         #
-        return True
+        self.log = True
 
     def disableLog(self):
         #
-        return True
+        self.log = False
     
-    def alterSimulationEndTime(self):
+    def alterSimulationEndTime(self, valor):
         #
-        return True
+        self.simulationEndTime = valor
+
 
