@@ -216,7 +216,7 @@ class Simulator:
                 print("Round Robin End Time: " + str(self.cpu.roundRobin.endTime))
                 print("Avaiable position: " + str(self.cpu.roundRobin.avaiablePositions))
                 print("\nMemory: ")
-                print("avaible space: " + str(self.memory.avaiableSpace))
+                print("avaible space (bytes): " + str(self.memory.avaiableSpace))
                 
                 input()
 
